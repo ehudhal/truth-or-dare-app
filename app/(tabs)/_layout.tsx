@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Gamepad2, Settings, Users, Plus, Package } from 'lucide-react-native';
-import { Platform } from 'react-native';
+import { Platform, TouchableOpacity } from 'react-native';
 
 export default function TabLayout() {
   return (
@@ -16,18 +16,38 @@ export default function TabLayout() {
           paddingBottom: 8,
           paddingTop: 8,
           height: 80,
-          // Add web-specific fixes for pointer events
+          // Web-specific fixes
           ...(Platform.OS === 'web' && {
+            position: 'relative',
+            zIndex: 999,
             pointerEvents: 'auto',
             cursor: 'pointer',
           }),
         },
-        // Add web-specific tab bar item styles
         tabBarItemStyle: {
+          flex: 1,
           ...(Platform.OS === 'web' && {
             cursor: 'pointer',
+            pointerEvents: 'auto',
           }),
         },
+        // Add web-specific button component
+        ...(Platform.OS === 'web' && {
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              style={[
+                props.style,
+                {
+                  flex: 1,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingVertical: 8,
+                },
+              ]}
+            />
+          ),
+        }),
       }}>
       <Tabs.Screen
         name="index"
