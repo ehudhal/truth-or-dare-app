@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Gamepad2, Settings, Users, Plus, Package } from 'lucide-react-native';
+import { Platform } from 'react-native';
 
 export default function TabLayout() {
   return (
@@ -15,6 +16,17 @@ export default function TabLayout() {
           paddingBottom: 8,
           paddingTop: 8,
           height: 80,
+          // Add web-specific fixes for pointer events
+          ...(Platform.OS === 'web' && {
+            pointerEvents: 'auto',
+            cursor: 'pointer',
+          }),
+        },
+        // Add web-specific tab bar item styles
+        tabBarItemStyle: {
+          ...(Platform.OS === 'web' && {
+            cursor: 'pointer',
+          }),
         },
       }}>
       <Tabs.Screen
