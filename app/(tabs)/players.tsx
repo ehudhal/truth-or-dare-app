@@ -44,6 +44,12 @@ export default function PlayersScreen() {
   const { width } = useResponsiveDimensions();
   const [newPlayerName, setNewPlayerName] = useState('');
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Players screen mounted/updated - players:', players.length);
+    console.log('Loading state:', loading);
+  }, [players, loading]);
+
   const handleAddPlayer = async () => {
     // Dismiss keyboard first
     Keyboard.dismiss();
@@ -90,10 +96,13 @@ export default function PlayersScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>Loading Players...</Text>
       </View>
     );
   }
+
+  // Debug: Force render message
+  console.log('Players component rendering now');
 
   return (
     <KeyboardAvoidingView 

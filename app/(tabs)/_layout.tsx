@@ -1,8 +1,16 @@
 import { Tabs } from 'expo-router';
 import { Gamepad2, Settings, Users, Plus, Package } from 'lucide-react-native';
 import { Platform, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function TabLayout() {
+  const navigation = useNavigation();
+  
+  // Debug navigation state
+  if (Platform.OS === 'web') {
+    console.log('Tab Layout - Navigation state:', navigation.getState());
+  }
+  
   return (
     <Tabs
       screenOptions={{
@@ -31,22 +39,10 @@ export default function TabLayout() {
             pointerEvents: 'auto',
           }),
         },
-        // Add web-specific button component
+        // Simplified web-specific fixes
         ...(Platform.OS === 'web' && {
-          tabBarButton: (props) => (
-            <TouchableOpacity
-              {...props}
-              style={[
-                props.style,
-                {
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  paddingVertical: 8,
-                },
-              ]}
-            />
-          ),
+          tabBarPressColor: 'rgba(139, 92, 246, 0.1)',
+          tabBarPressOpacity: 0.8,
         }),
       }}>
       <Tabs.Screen
@@ -65,6 +61,9 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <Users size={size} color={color} />
           ),
+          // Add debug logging
+          tabBarLabelStyle: { fontSize: 12 },
+          tabBarLabel: 'Players',
         }}
       />
       <Tabs.Screen

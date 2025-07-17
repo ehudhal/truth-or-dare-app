@@ -12,20 +12,11 @@ export default function RootLayout() {
   // Add web-specific polyfills and fixes
   useEffect(() => {
     if (Platform.OS === 'web') {
-      // Ensure proper touch event handling on web
+      // Minimal CSS fixes for tab navigation
       const style = document.createElement('style');
       style.innerHTML = `
-        * {
-          -webkit-touch-callout: none;
-          -webkit-user-select: none;
-          -khtml-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-        }
-        
-        [role="button"], button, [tabindex] {
-          cursor: pointer !important;
+        /* Essential tab navigation fixes */
+        [role="tablist"] {
           pointer-events: auto !important;
         }
         
@@ -34,48 +25,27 @@ export default function RootLayout() {
           pointer-events: auto !important;
         }
         
-        /* Force tab navigation to work */
-        [role="tablist"] {
-          pointer-events: auto !important;
-          z-index: 9999 !important;
-        }
-        
-        [role="tablist"] > * {
-          pointer-events: auto !important;
+        /* Ensure buttons work */
+        [role="button"], button {
           cursor: pointer !important;
-        }
-        
-        /* React Navigation web tab fix */
-        .css-175oi2r {
           pointer-events: auto !important;
-        }
-        
-        /* Tab bar specific fixes */
-        [data-testid="bottom-tab-bar"] {
-          pointer-events: auto !important;
-        }
-        
-        [data-testid="bottom-tab-bar"] > * {
-          pointer-events: auto !important;
-          cursor: pointer !important;
         }
       `;
       document.head.appendChild(style);
       
-      // Add click event listeners as fallback
+      // Debug: Log when tabs are clicked
       const addClickListeners = () => {
         const tabButtons = document.querySelectorAll('[role="tab"]');
+        console.log('Found tab buttons:', tabButtons.length);
         tabButtons.forEach((button, index) => {
           button.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Tab clicked:', index);
+            console.log('Tab clicked:', index, 'Will navigate');
           });
         });
       };
       
       // Add listeners after a short delay to ensure DOM is ready
-      setTimeout(addClickListeners, 1000);
+      setTimeout(addClickListeners, 2000);
       
       return () => {
         document.head.removeChild(style);
