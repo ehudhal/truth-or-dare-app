@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGameData } from '@/hooks/useGameData';
 import { GameContent, Player } from '@/types/game';
-import { Shuffle, RotateCcw } from 'lucide-react-native';
+import { RotateCcw } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -14,14 +15,39 @@ import Animated, {
 const { width } = Dimensions.get('window');
 
 export default function GameScreen() {
-  const { players, settings, getContentByLevel, updatePlayerStats, loading, dataLoaded } = useGameData();
+  const { players, settings, getContentByLevel, updatePlayerStats, loading, dataLoaded, refreshData } = useGameData();
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [currentContent, setCurrentContent] = useState<GameContent | null>(null);
-  const [gameHistory, setGameHistory] = useState<Array<{
+  const [gameHistory, setGameHistory] = useState<{
     player: Player;
     content: GameContent;
     timestamp: number;
-  }>>([]);
+  }[]>([]);
+
+  // Reset current player index when players change
+  useEffect(() => {
+    console.log('Game screen - Players changed:', players.length, 'players');
+    if (players.length === 0) {
+      setCurrentPlayerIndex(0);
+      setCurrentContent(null);
+    } else if (currentPlayerIndex >= players.length) {
+      setCurrentPlayerIndex(0);
+    }
+  }, [players.length, currentPlayerIndex]);
+
+  // Force refresh when tab becomes active
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Game screen focused - players length:', players.length);
+      // Force data refresh when tab becomes active
+      refreshData();
+      
+      // Force a state update to ensure proper rendering
+      if (players.length > 0 && currentPlayerIndex >= players.length) {
+        setCurrentPlayerIndex(0);
+      }
+    }, [refreshData, currentPlayerIndex, players.length])
+  );
 
   // Animation values
   const cardScale = useSharedValue(1);
@@ -39,7 +65,7 @@ export default function GameScreen() {
         withTiming(0, { duration: 200 })
       );
     }
-  }, [currentContent]);
+  }, [currentContent, cardScale, cardRotation]);
 
   const animatedCardStyle = useAnimatedStyle(() => {
     return {
@@ -134,6 +160,8 @@ export default function GameScreen() {
   const currentLevel = getCurrentLevel();
   const currentPlayer = players[currentPlayerIndex];
 
+  console.log('Game screen render - Players:', players.length, 'Current player:', currentPlayer?.name, 'Loading:', loading, 'Data loaded:', dataLoaded);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -150,9 +178,9 @@ export default function GameScreen() {
       </View>
 
       {/* Current Player */}
-      {players.length > 0 && currentPlayer && !currentContent && (
+      {players.length > 0 && !currentContent && (
         <View style={styles.playerCard}>
-          <Text style={styles.playerName}>{currentPlayer.name}</Text>
+          <Text style={styles.playerName}>{currentPlayer?.name || 'No player selected'}</Text>
           <Text style={styles.playerSubtext}>Your turn!</Text>
         </View>
       )}
@@ -391,7 +419,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   noPlayersCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFBEB',
     padding: 20,
     borderRadius: 16,
     marginBottom: 30,
@@ -403,7 +431,6 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 2,
     borderColor: '#FEF3C7',
-    backgroundColor: '#FFFBEB',
   },
   noPlayersTitle: {
     fontSize: 20,

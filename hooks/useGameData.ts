@@ -374,6 +374,11 @@ export function useGameData() {
     loadData();
   }, []);
 
+  // Add a refresh function that can be called externally
+  const refreshData = () => {
+    loadData();
+  };
+
   const loadData = async () => {
     try {
       console.log('Loading game data...');
@@ -386,7 +391,7 @@ export function useGameData() {
 
       console.log('Raw players data:', playersData);
 
-      if (playersData) {
+      if (playersData && playersData !== 'null') {
         try {
           const parsedPlayers = JSON.parse(playersData);
           console.log('Parsed players:', parsedPlayers);
@@ -397,8 +402,8 @@ export function useGameData() {
             console.log('Players data is not an array, setting to empty');
             setPlayers([]);
           }
-        } catch {
-          console.log('Error parsing players data, setting to empty');
+        } catch (error) {
+          console.log('Error parsing players data, setting to empty. Error:', error);
           setPlayers([]);
         }
       } else {
@@ -481,7 +486,7 @@ export function useGameData() {
       console.log('Saving players:', newPlayers);
       await AsyncStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(newPlayers));
       setPlayers(newPlayers);
-      console.log('Players saved and state updated');
+      console.log('Players saved and state updated. New state:', newPlayers);
     } catch (error) {
       console.error('Error saving players:', error);
     }
@@ -514,7 +519,7 @@ export function useGameData() {
     }
   };
 
-  const addPlayer = (name: string) => {
+  const addPlayer = async (name: string) => {
     const newPlayer: Player = {
       id: Date.now().toString(),
       name,
@@ -522,11 +527,37 @@ export function useGameData() {
     };
     console.log('Adding player:', newPlayer);
     console.log('Current players before adding:', players);
-    savePlayers([...players, newPlayer]);
+    
+    const newPlayers = [...players, newPlayer];
+    console.log('New players array:', newPlayers);
+    
+    try {
+      // Save to AsyncStorage first
+      await AsyncStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(newPlayers));
+      console.log('Players saved successfully');
+      
+      // Then update state
+      setPlayers(newPlayers);
+    } catch (error) {
+      console.error('Error saving players:', error);
+    }
   };
 
   const removePlayer = (playerId: string) => {
-    savePlayers(players.filter(p => p.id !== playerId));
+    setPlayers(currentPlayers => {
+      const newPlayers = currentPlayers.filter(p => p.id !== playerId);
+      
+      // Save to AsyncStorage
+      AsyncStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(newPlayers))
+        .then(() => {
+          console.log('Players saved successfully after removal');
+        })
+        .catch(error => {
+          console.error('Error saving players:', error);
+        });
+      
+      return newPlayers;
+    });
   };
 
   const addContent = (type: 'truth' | 'dare', text: string, level: number, packageId?: string) => {
@@ -765,19 +796,31 @@ export function useGameData() {
   };
 
   const updatePlayerStats = (playerId: string, type: 'truth' | 'dare') => {
-    const updatedPlayers = players.map(player => {
-      if (player.id === playerId) {
-        return {
-          ...player,
-          stats: {
-            ...player.stats,
-            [type]: player.stats[type] + 1,
-          },
-        };
-      }
-      return player;
+    setPlayers(currentPlayers => {
+      const updatedPlayers = currentPlayers.map(player => {
+        if (player.id === playerId) {
+          return {
+            ...player,
+            stats: {
+              ...player.stats,
+              [type]: player.stats[type] + 1,
+            },
+          };
+        }
+        return player;
+      });
+      
+      // Save to AsyncStorage
+      AsyncStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(updatedPlayers))
+        .then(() => {
+          console.log('Player stats updated successfully');
+        })
+        .catch(error => {
+          console.error('Error updating player stats:', error);
+        });
+      
+      return updatedPlayers;
     });
-    savePlayers(updatedPlayers);
   };
 
   const updatePackage = (packageId: string, updates: Partial<ContentPackage>) => {
@@ -855,5 +898,6 @@ export function useGameData() {
     updatePlayerStats,
     saveSettings,
     resetAppData,
+    refreshData,
   };
 }

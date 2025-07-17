@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, FlatList, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native';
 import { useState } from 'react';
 import { useGameData } from '@/hooks/useGameData';
 import { Player } from '@/types/game';
@@ -8,7 +8,7 @@ export default function PlayersScreen() {
   const { players, addPlayer, removePlayer, loading } = useGameData();
   const [newPlayerName, setNewPlayerName] = useState('');
 
-  const handleAddPlayer = () => {
+  const handleAddPlayer = async () => {
     // Dismiss keyboard first
     Keyboard.dismiss();
     
@@ -22,7 +22,8 @@ export default function PlayersScreen() {
       return;
     }
 
-    addPlayer(newPlayerName.trim());
+    console.log('Players tab - Adding player:', newPlayerName.trim());
+    await addPlayer(newPlayerName.trim());
     setNewPlayerName('');
   };
 
@@ -49,24 +50,6 @@ export default function PlayersScreen() {
     // Optional: Add any blur handling if needed
   };
 
-  const renderPlayer = ({ item: player }: { item: Player }) => (
-    <View style={styles.playerCard}>
-      <View style={styles.playerInfo}>
-        <View style={styles.playerAvatar}>
-          <User size={24} color="#8B5CF6" />
-        </View>
-        <View style={styles.playerDetails}>
-          <Text style={styles.playerName}>{player.name}</Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => handleRemovePlayer(player)}
-      >
-        <Trash2 size={20} color="#EF4444" />
-      </TouchableOpacity>
-    </View>
-  );
 
   if (loading) {
     return (
