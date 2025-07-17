@@ -1,11 +1,47 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native';
-import { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView, Keyboard, Dimensions } from 'react-native';
+import { useState, useEffect } from 'react';
 import { useGameData } from '@/hooks/useGameData';
 import { Player } from '@/types/game';
 import { Plus, Trash2, User } from 'lucide-react-native';
 
+// Use hook for responsive dimensions
+const useResponsiveDimensions = () => {
+  const [dimensions, setDimensions] = useState(() => {
+    const { width, height } = Dimensions.get('window');
+    return { width, height };
+  });
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions({ width: window.width, height: window.height });
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  return dimensions;
+};
+
+// Helper function for responsive container styling
+const getResponsiveContainerStyle = (screenWidth: number) => {
+  if (Platform.OS === 'web') {
+    if (screenWidth > 768) {
+      return {
+        paddingHorizontal: Math.min(80, screenWidth * 0.1),
+        maxWidth: 800,
+        alignSelf: 'center' as const,
+        width: '100%',
+      };
+    } else if (screenWidth > 480) {
+      return { paddingHorizontal: 40 };
+    }
+  }
+  return { paddingHorizontal: 20 };
+};
+
 export default function PlayersScreen() {
   const { players, addPlayer, removePlayer, loading } = useGameData();
+  const { width } = useResponsiveDimensions();
   const [newPlayerName, setNewPlayerName] = useState('');
 
   const handleAddPlayer = async () => {
@@ -67,7 +103,7 @@ export default function PlayersScreen() {
     >
       <ScrollView 
         style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, getResponsiveContainerStyle(width)]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -145,8 +181,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'web' ? 40 : 60,
     paddingBottom: 20,
   },
   title: {

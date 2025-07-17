@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions, Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useGameData } from '@/hooks/useGameData';
 import { GameContent, Player } from '@/types/game';
@@ -12,10 +12,60 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 
-const { width } = Dimensions.get('window');
+// Use hook for responsive dimensions
+const useResponsiveDimensions = () => {
+  const [dimensions, setDimensions] = useState(() => {
+    const { width, height } = Dimensions.get('window');
+    return { width, height };
+  });
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions({ width: window.width, height: window.height });
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  return dimensions;
+};
+
+// Helper function for responsive button width
+const getResponsiveButtonWidth = (screenWidth: number) => {
+  if (Platform.OS === 'web') {
+    // On web, use responsive breakpoints
+    if (screenWidth > 768) {
+      return Math.min(200, (screenWidth - 100) / 2); // Desktop: max 200px, with margins
+    } else if (screenWidth > 480) {
+      return (screenWidth - 80) / 2; // Tablet
+    } else {
+      return (screenWidth - 60) / 2; // Mobile
+    }
+  } else {
+    // Native mobile
+    return (screenWidth - 60) / 2;
+  }
+};
+
+// Helper function for responsive container padding
+const getResponsiveContainerStyle = (screenWidth: number) => {
+  if (Platform.OS === 'web') {
+    if (screenWidth > 768) {
+      return {
+        paddingHorizontal: Math.min(80, screenWidth * 0.1), // Desktop: 10% padding, max 80px
+        maxWidth: 800, // Max width for desktop
+        alignSelf: 'center' as const,
+      };
+    } else if (screenWidth > 480) {
+      return { paddingHorizontal: 40 }; // Tablet
+    }
+  }
+  return { paddingHorizontal: 20 }; // Mobile/default
+};
 
 export default function GameScreen() {
   const { players, settings, getContentByLevel, updatePlayerStats, loading, dataLoaded, refreshData } = useGameData();
+  const { width, height } = useResponsiveDimensions();
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [currentContent, setCurrentContent] = useState<GameContent | null>(null);
   const [gameHistory, setGameHistory] = useState<{
@@ -163,7 +213,7 @@ export default function GameScreen() {
   console.log('Game screen render - Players:', players.length, 'Current player:', currentPlayer?.name, 'Loading:', loading, 'Data loaded:', dataLoaded);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, getResponsiveContainerStyle(width)]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Truth or Dare</Text>
@@ -214,7 +264,7 @@ export default function GameScreen() {
           <Text style={styles.selectionTitle}>Choose wisely...</Text>
           
           <View style={styles.buttonsContainer}>
-            <Animated.View style={[animatedButtonStyle, { marginRight: 10 }]}>
+            <Animated.View style={[animatedButtonStyle, styles.buttonWrapper]}>
               <TouchableOpacity
                 style={[styles.selectionButton, styles.truthButton]}
                 onPress={() => handleButtonPress('truth')}
@@ -223,7 +273,7 @@ export default function GameScreen() {
               </TouchableOpacity>
             </Animated.View>
             
-            <Animated.View style={[animatedButtonStyle, { marginLeft: 10 }]}>
+            <Animated.View style={[animatedButtonStyle, styles.buttonWrapper]}>
               <TouchableOpacity
                 style={[styles.selectionButton, styles.dareButton]}
                 onPress={() => handleButtonPress('dare')}
@@ -252,8 +302,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'web' ? 40 : 60,
+    width: '100%',
   },
   header: {
     flexDirection: 'row',
@@ -262,7 +312,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: Platform.OS === 'web' ? 32 : 28,
     fontWeight: 'bold',
     color: '#1F2937',
   },
@@ -368,10 +418,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    paddingHorizontal: 20,
+  },
+  buttonWrapper: {
+    flex: 1,
+    alignItems: 'center',
   },
   selectionButton: {
-    width: (width - 60) / 2,
-    height: 120,
+    flex: 1,
+    height: Platform.OS === 'web' ? 100 : 120,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -380,6 +437,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
+    minWidth: 120,
+    maxWidth: 200,
   },
   truthButton: {
     backgroundColor: '#3B82F6',
@@ -389,7 +448,7 @@ const styles = StyleSheet.create({
   },
   selectionButtonText: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: Platform.OS === 'web' ? 20 : 24,
     fontWeight: 'bold',
   },
   gameStats: {
